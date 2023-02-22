@@ -1,12 +1,38 @@
 # Learning Kubernetes Multi-Node Ingress
 
 - [Learning Kubernetes Multi-Node Ingress](#learning-kubernetes-multi-node-ingress)
+  - [Experiment Todos](#experiment-todos)
   - [Notes](#notes)
     - [Setup](#setup)
     - [Ingress Notes](#ingress-notes)
       - [Pink](#pink)
       - [Blue](#blue)
+      - [Red 404](#red-404)
   - [Later](#later)
+
+## Experiment Todos
+- [ ] addon-metallb
+- [ ] ingress
+  - [x] global default 404 (colorappred)
+  - [ ] difference between default * and default in specific ingress
+  - [ ] web app that
+    - [ ] diffentiates by color
+      - [ ] reports
+        - [ ] client ip
+        - [ ] server ip
+        - [ ] hostname
+        - [ ] url path
+      - [ ] test cases
+        - [ ] rewrite
+        - [ ] non-rewrite
+        - [ ] each ingress controller type
+        - [ ] headers to forward client ip
+        - [ ] forge headers resistance
+        - [ ] dump env variables
+- [ ] external DNS
+- [ ] rewrite rules
+  - [ ] simple & REGEX
+- [ ] let's encrypt / cert-manager
 
 ## Notes
 
@@ -14,7 +40,7 @@
 
 __VM Setup__
 
-- ~I started with ~~two~~ one Ubuntu 22.04.1 laptop~~s~~.
+- I started with ~~two~~ one Ubuntu 22.04.1 laptop~~s~~.
 - I then created two KVM instances ~~on each laptop~~ also running Ubuntu 22.04.1. (Each has 2 vCPUs and 4096 of ram)   
   - `sudo apt update && sudo apt upgrade && sudo apt install docker && sudo apt autoremove`. 
   - Switched NIC to Bridged mode, selected device `virbr0`
@@ -233,6 +259,89 @@ spec:
         pathType: Prefix
 ```
 
+#### Red 404
+`$ kubectl apply -f red.yaml`
+
+```yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:  
+  labels:
+    kubernetes.io/metadata.name: colorapp
+  name: colorappred
+---
+apiVersion: v1
+data:
+  APP_COLOR: red
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: colorappconfig
+  namespace: colorappred
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: colorapp
+  name: colorapp
+  namespace: colorappred
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: colorapp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: colorapp
+    spec:
+      containers:
+      - image: kodekloud/webapp-color
+        name: webapp-color
+        resources: {}
+        envFrom:
+        - configMapRef:
+            name: colorappconfig
+        ports:
+          - containerPort: 8080
+            name: colorapp-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: colorapp
+  name: colorapp
+  namespace: colorappred
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: colorapp-http
+  selector:
+    app: colorapp
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: null
+  name: colorapp
+  namespace: colorappred
+spec:
+  defaultBackend:
+    service:
+      name: colorapp
+      port:
+        name: http
+```
 
 
 
