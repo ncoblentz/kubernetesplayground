@@ -4,6 +4,13 @@
   - [Experiment Todos](#experiment-todos)
   - [Notes](#notes)
     - [Setup](#setup)
+    - [Ingress Controller Experiments](#ingress-controller-experiments)
+      - [NGINX](#nginx)
+      - [HAProxy](#haproxy)
+      - [Contour](#contour)
+      - [Kong](#kong)
+      - [Traefik](#traefik)
+      - [Istio](#istio)
     - [Ingress Notes](#ingress-notes)
       - [Pink](#pink)
       - [Blue](#blue)
@@ -14,24 +21,30 @@
   - [Later](#later)
 
 ## Experiment Todos
+
 - [ ] addon-metallb
 - [ ] ingress
-  - [x] global default 404 (colorappred)
-  - [ ] difference between default * and default in specific ingress
+  - [X] global default 404 (colorappred)  
   - [ ] web app that
-    - [ ] diffentiates by color
-      - [X] reports
-        - [X] client ip
-        - [X] server ip
-        - [X] hostname
-        - [X] url path
-      - [ ] test cases
-        - [ ] rewrite
-        - [ ] non-rewrite
-        - [ ] each ingress controller type
-        - [ ] headers to forward client ip
-        - [ ] forge headers resistance
-        - [ ] dump env variables
+    - [X] reports
+      - [X] Client IP
+      - [X] Server IP
+      - [X] Hostname
+      - [X] URL path
+      - [X] Request HTTP headers
+      - [X] Environment Variables 
+    - [ ] test cases
+      - [ ] URL rewriting
+      - [ ] each ingress controller type
+        - [X] Built in NGINX
+        - [ ] HAProxy
+        - [ ] Contour
+        - [ ] Kong
+        - [ ] Traefik
+        - [ ] Istio
+      - [X] headers to forward client IP
+      - [X] forged `X-Forwarded-For` (and similar) headers resistance
+        - NGINX - replaces `X-Forwarded-For` and `X-Real-IP` with its own headers and puts the previous `X-Forwarded-For: 10.10.10.11` headers as `X-Original-Forwarded-For: 10.10.10.11`        
 - [ ] external DNS
 - [ ] rewrite rules
   - [ ] simple & REGEX
@@ -68,10 +81,38 @@ source <(kubectl completion bash)
 ```
 
 __Cluster Creation__
-- Master Node on Laptop 1: `microk8s add-node`
-- Worker Node on Laptop 1: `microk8s join 192.168.122.251:25000/c71a575baa373ad498c7fe02b4525de5/53b2fdd8c544 --worker`
+
+- Master VM on Laptop 1: `microk8s add-node`
+- Worker VM on Laptop 1: `microk8s join 192.168.122.251:25000/c71a575baa373ad498c7fe02b4525de5/53b2fdd8c544 --worker`
+
+### Ingress Controller Experiments
+
+#### NGINX
+
+The original setup included `ingress` which is the build in NGINX controller
+
+#### HAProxy
+
+Todo
+
+#### Contour
+
+Todo
+
+#### Kong
+
+Todo
+
+#### Traefik
+
+Todo
+
+#### Istio
+
+Todo
 
 ### Ingress Notes
+
 ```bash
 $ kubectl get nodes -o wide
 NAME               STATUS   ROLES    AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
@@ -82,6 +123,7 @@ $ sudo bash -c "echo '192.168.122.37 k8testblue.com' >> /etc/hosts"
 $ sudo bash -c "echo '192.168.122.37 k8testpink.com' >> /etc/hosts"
 $ sudo bash -c "echo '192.168.122.37 k8testdiag.com' >> /etc/hosts"
 ```
+
 #### Pink
 
 `$ kubectl apply -f pink.yaml`
@@ -174,6 +216,7 @@ spec:
 ```
 
 #### Blue
+
 `$ kubectl apply -f blue.yaml`
 
 ```yaml
@@ -264,6 +307,7 @@ spec:
 ```
 
 #### Red 404
+
 `$ kubectl apply -f red.yaml`
 
 ```yaml
@@ -348,11 +392,15 @@ spec:
 ```
 
 #### Diagnostic App
+
 ##### Build
+
 ```bash
 $ docker build . -t diagnosticapp -t sekhmetn/diagnosticapp:latest && docker push sekhmetn/diagnosticapp:latest
 ```
+
 ##### Kubernetes
+
 `$ kubectl apply -f diagnostic.yaml`
 `$ kubectl -n diagnosticapp rollout restart deployment diagnosticapp`
 ```yaml
@@ -431,5 +479,6 @@ spec:
 
 
 ## Later
+
 https://microk8s.io/docs/nfs
 https://www.ibm.com/docs/en/cloud-private/3.2.0?topic=console-namespace-is-stuck-in-terminating-state   
