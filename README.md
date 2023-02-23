@@ -350,13 +350,11 @@ spec:
 #### Diagnostic App
 ##### Build
 ```bash
-$ docker build . -t diagnosticapp
-$ docker tag diagnosticapp:latest sekhmetn/diagnosticapp:latest
-$ docker push sekhmetn/diagnosticapp:latest
+$ docker build . -t diagnosticapp -t sekhmetn/diagnosticapp:latest && docker push sekhmetn/diagnosticapp:latest
 ```
 ##### Kubernetes
 `$ kubectl apply -f diagnostic.yaml`
-
+`$ kubectl -n diagnosticapp rollout restart deployment diagnosticapp`
 ```yaml
 ---
 apiVersion: v1
