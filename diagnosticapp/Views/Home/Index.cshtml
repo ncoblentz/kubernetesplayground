@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-left">
+    <p><b>Client IP:</b> @ViewBag.ClientIP</p>
+    <p><b>Server Hostname:</b> @ViewBag.Host</p>
+    <p><b>Server IP:</b> @ViewBag.ServerIP</p>             
+    <p><b>Server Port:</b> @ViewBag.ServerPort</p>
+    <p><b>Path:</b> @ViewBag.Path</p>
+    <p><b>Environment Variables:</b></p>
+    <code><pre>
+@ViewBag.EnvironmentVariables
+    </pre></code>
+    <p><b>Headers:</b></p>
+    <code><pre>
+@ViewBag.Headers
+    </pre></code>
+</div>

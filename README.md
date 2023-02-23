@@ -8,6 +8,9 @@
       - [Pink](#pink)
       - [Blue](#blue)
       - [Red 404](#red-404)
+      - [Diagnostic App](#diagnostic-app)
+        - [Build](#build)
+        - [Kubernetes](#kubernetes)
   - [Later](#later)
 
 ## Experiment Todos
@@ -17,11 +20,11 @@
   - [ ] difference between default * and default in specific ingress
   - [ ] web app that
     - [ ] diffentiates by color
-      - [ ] reports
-        - [ ] client ip
-        - [ ] server ip
-        - [ ] hostname
-        - [ ] url path
+      - [X] reports
+        - [X] client ip
+        - [X] server ip
+        - [X] hostname
+        - [X] url path
       - [ ] test cases
         - [ ] rewrite
         - [ ] non-rewrite
@@ -77,6 +80,7 @@ g7ubuntuk8n1       Ready    <none>   16m   v1.26.1   192.168.122.61   <none>    
 
 $ sudo bash -c "echo '192.168.122.37 k8testblue.com' >> /etc/hosts"
 $ sudo bash -c "echo '192.168.122.37 k8testpink.com' >> /etc/hosts"
+$ sudo bash -c "echo '192.168.122.37 k8testdiag.com' >> /etc/hosts"
 ```
 #### Pink
 
@@ -343,6 +347,89 @@ spec:
         name: http
 ```
 
+#### Diagnostic App
+##### Build
+```bash
+$ docker build . -t diagnosticapp
+$ docker tag diagnosticapp:latest sekhmetn/diagnosticapp:latest
+$ docker push sekhmetn/diagnosticapp:latest
+```
+##### Kubernetes
+`$ kubectl apply -f diagnostic.yaml`
+
+```yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:  
+  labels:
+    kubernetes.io/metadata.name: diagnosticapp
+  name: diagnosticapp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: diagnosticapp
+  name: diagnosticapp
+  namespace: diagnosticapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diagnosticapp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: diagnosticapp
+    spec:
+      containers:
+      - image: sekhmetn/diagnosticapp
+        name: diagnosticapp          
+        ports:
+          - containerPort: 5000
+            name: diag-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: diagnosticapp
+  name: diagnosticapp
+  namespace: diagnosticapp
+spec:
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+    targetPort: diag-http
+  selector:
+    app: diagnosticapp
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: null
+  name: diagnosticapp
+  namespace: diagnosticapp
+spec:
+  rules:
+  - host: k8testdiag.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: diagnosticapp
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+```
 
 
 ## Later
