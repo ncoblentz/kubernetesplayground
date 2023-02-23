@@ -6,10 +6,10 @@
     - [Setup](#setup)
     - [Ingress Controller Experiments](#ingress-controller-experiments)
       - [NGINX](#nginx)
+      - [Traefik](#traefik)
       - [HAProxy](#haproxy)
       - [Contour](#contour)
       - [Kong](#kong)
-      - [Traefik](#traefik)
       - [Istio](#istio)
     - [Ingress Notes](#ingress-notes)
       - [Pink](#pink)
@@ -58,7 +58,7 @@ __VM Setup__
 
 - I started with ~~two~~ one Ubuntu 22.04.1 laptop~~s~~.
 - I then created two KVM instances ~~on each laptop~~ also running Ubuntu 22.04.1. (Each has 2 vCPUs and 4096 of ram)   
-  - `sudo apt update && sudo apt upgrade && sudo apt install docker && sudo apt autoremove`. 
+  - `sudo apt update && sudo apt upgrade && sudo apt install docker nfs-common && sudo apt autoremove`. 
   - Switched NIC to Bridged mode, selected device `virbr0`
   - edit `/etc/hostname` and change it to `g7ubuntu2204k8n1` and `g7ubuntu2204k8n2`
 
@@ -71,12 +71,14 @@ https://microk8s.io/docs/getting-started
 - `su - $USER`
 - `microk8s status --wait-ready`
 - `microk8s kubectl get nodes`
-- `microk8s enable dns hostpath-storage dashboard helm ingress rbac`
+- ~~`microk8s enable dns hostpath-storage dashboard helm ingress rbac`~~
+- `microk8s enable dns helm ingress`
 
 edit `~/.bashrc` and add:
 
 ```
 alias kubectl='microk8s kubectl'
+alias helm='microk8s helm'
 source <(kubectl completion bash)
 ```
 
@@ -91,9 +93,94 @@ __Cluster Creation__
 
 The original setup included `ingress` which is the build in NGINX controller
 
-#### HAProxy
+- https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/annotations.md
+
+#### Traefik
+https://www.robert-jensen.dk/posts/2021-microk8s-with-traefik-and-metallb/
+
+```bash
+$ microk8s enable community
+
+$ microk8s disable ingress
+
+$ microk8s enable metallb:192.168.122.240-192.168.122.250
+
+```
 
 Todo
+
+#### HAProxy
+
+```bash
+$ helm repo add haproxytech https://haproxytech.github.io/helm-charts
+
+$ helm repo update
+
+$ helm search repo haproxy
+
+$ helm install haproxy haproxytech/kubernetes-ingress
+NAME: haproxy
+LAST DEPLOYED: Thu Feb 23 13:45:47 2023
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+HAProxy Kubernetes Ingress Controller has been successfully installed.
+
+Controller image deployed is: "haproxytech/kubernetes-ingress:1.9.3".
+Your controller is of a "Deployment" kind. Your controller service is running as a "NodePort" type.
+RBAC authorization is enabled.
+Controller ingress.class is set to "haproxy" so make sure to use same annotation for
+Ingress resource.
+
+Service ports mapped are:
+  - name: http
+    containerPort: 8080
+    protocol: TCP
+  - name: https
+    containerPort: 8443
+    protocol: TCP
+  - name: stat
+    containerPort: 1024
+    protocol: TCP
+
+Node IP can be found with:
+  $ kubectl --namespace default get nodes -o jsonpath="{.items[0].status.addresses[1].address}"
+
+The following ingress resource routes traffic to pods that match the following:
+  * service name: web
+  * client's Host header: webdemo.com
+  * path begins with /
+
+  ---
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: web-ingress
+    namespace: default
+    annotations:
+      ingress.class: "haproxy"
+  spec:
+    rules:
+    - host: webdemo.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: web
+            servicePort: 80
+
+In case that you are using multi-ingress controller environment, make sure to use ingress.class annotation and match it
+with helm chart option controller.ingressClass.
+
+For more examples and up to date documentation, please visit:
+  * Helm chart documentation: https://github.com/haproxytech/helm-charts/tree/main/kubernetes-ingress
+  * Controller documentation: https://www.haproxy.com/documentation/kubernetes/latest/
+  * Annotation reference: https://github.com/haproxytech/kubernetes-ingress/tree/master/documentation
+  * Image parameters reference: https://github.com/haproxytech/kubernetes-ingress/blob/master/documentation/controller.md
+
+```
 
 #### Contour
 
@@ -103,9 +190,7 @@ Todo
 
 Todo
 
-#### Traefik
 
-Todo
 
 #### Istio
 
